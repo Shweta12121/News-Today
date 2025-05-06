@@ -1,6 +1,8 @@
 import React, {userState, useEffect} from "react";
 import {Link} from 'react-router-dom';
 import logo from './assets/logo/png';
+import countries from './countries';
+
 function Header(){
     const [active, setActive] =useState(false);
     const [showCountryDropdown, setShowCountryDropdown]= userState(false);
