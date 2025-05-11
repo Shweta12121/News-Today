@@ -2,6 +2,7 @@ import { React, useState, useEffect } from 'react';
 import EverythingCard from './EverythingCard';
 import Loader from './Loader';
 
+
 function AllNews() {
   const [data, setData] = useState([]);
   const [page, setPage] = useState(1);
