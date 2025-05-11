@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import reactLogo from './assets/react.svg';
 import viteLogo from '/vite.svg';
 import './App.css';
@@ -8,9 +8,17 @@ import CountryNews from './components/CountryNews';
 import News from './components/Topheadlines';
 import TopHeadlines from './components/Topheadlines';
 import RecommendedNews from './components/RecommendedNews';
+// Import tracking service
+import { initializeTracking } from './services/trackingService';
 
 export function App() {
   const [count, setCount] = useState(0);
+  
+  // Initialize tracking system when app loads
+  useEffect(() => {
+    initializeTracking();
+    console.log("Recommendation tracking system initialized");
+  }, []);
 
   return (
     <>

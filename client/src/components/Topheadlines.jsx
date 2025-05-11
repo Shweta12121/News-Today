@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useParams } from 'react-router-dom'
 import EverythingCard from './EverythingCard'
 import Loader from "./Loader";
+import ArticleTracker from './ArticleTracker';
 
 function TopHeadlines() {
   const params = useParams();
@@ -19,6 +20,15 @@ function TopHeadlines() {
     setPage(page + 1);
   }
 
+{articles.map((article) => (
+  <ArticleTracker key={article.url} article={article}>
+    {/* Your existing article card/component here */}
+    <div className="article-card">
+      <h2>{article.title}</h2>
+      {/* ... rest of your article display ... */}
+    </div>
+  </ArticleTracker>
+))}
   let pageSize = 6;
 
   useEffect(() => {
