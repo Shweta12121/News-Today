@@ -1,98 +1,170 @@
+// src/components/Topheadlines.jsx
+
 import React, { useState, useEffect } from "react";
-import { useParams } from 'react-router-dom'
-import EverythingCard from './EverythingCard'
+import { useNavigate } from 'react-router-dom';
 import Loader from "./Loader";
-import ArticleTracker from './ArticleTracker';
 
-function TopHeadlines() {
-  const params = useParams();
-  const [data, setData] = useState([]);
-  const [page, setPage] = useState(1);
-  const [totalResults, setTotalResults] = useState(0);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState(null);
+// Define the API base URL
+const API_BASE_URL = 'http://localhost:3000';
 
-  function handlePrev() {
-    setPage(page - 1);
-  }
+const Topheadlines = () => {
+    const [articles, setArticles] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+    const [page, setPage] = useState(1);
+    const [hasMore, setHasMore] = useState(true);
+    const pageSize = 6;
+    const navigate = useNavigate();
 
-  function handleNext() {
-    setPage(page + 1);
-  }
-
-{articles.map((article) => (
-  <ArticleTracker key={article.url} article={article}>
-    {/* Your existing article card/component here */}
-    <div className="article-card">
-      <h2>{article.title}</h2>
-      {/* ... rest of your article display ... */}
-    </div>
-  </ArticleTracker>
-))}
-  let pageSize = 6;
-
-  useEffect(() => {
-    setIsLoading(true);
-    setError(null);
-    const categoryParam = params.category ? `&category=${params.category}` : "";
-    fetch(`https://news-aggregator-dusky.vercel.app/top-headlines?language=en${categoryParam}&page=${page}&pageSize=${pageSize}`)
-      .then((response) => {
-        if (response.ok) {
-          return response.json();
+    const fetchHeadlines = async (currentPage) => {
+        try {
+            setLoading(true);
+            // Add timestamp to prevent caching
+            const timestamp = new Date().getTime();
+            const category = 'general'; // or any category you prefer
+            
+            const response = await fetch(`${API_BASE_URL}/top-headlines?category=${category}&page=${currentPage}&pageSize=${pageSize}&_t=${timestamp}`);
+            
+            if (!response.ok) {
+                throw new Error(`Server responded with status: ${response.status}`);
+            }
+            
+            const result = await response.json();
+            
+            // Check if we have our custom response format or direct NewsAPI format
+            let newsData;
+            if (result.success && result.data) {
+                // Our custom API wrapper format
+                newsData = result.data;
+            } else {
+                // Direct format
+                newsData = result;
+            }
+            
+            if (newsData.articles && newsData.articles.length > 0) {
+                if (currentPage === 1) {
+                    setArticles(newsData.articles);
+                } else {
+                    setArticles(prev => [...prev, ...newsData.articles]);
+                }
+                
+                // Track if we have more articles
+                setHasMore(newsData.articles.length === pageSize);
+            } else {
+                setHasMore(false);
+            }
+            setError(null);
+        } catch (err) {
+            console.error("Fetch error:", err);
+            setError(`Failed to load headlines: ${err.message}`);
+        } finally {
+            setLoading(false);
         }
-        throw new Error('Network response was not ok');
-      })
-      .then((json) => {
-        if (json.success) {
-          setTotalResults(json.data.totalResults);
-          setData(json.data.articles);
-        } else {
-          setError(json.message || 'An error occurred');
-        }
-      })
-      .catch((error) => {
-        console.error('Fetch error:', error);
-        setError('Failed to fetch news. Please try again later.');
-      })
-      .finally(() => {
-        setIsLoading(false);
-      });
-  }, [page, params.category]);
+    };
 
-  return (
-    <>
-      {error && <div className="text-red-500 mb-4">{error}</div>}
-      <div className='my-10 cards grid lg:place-content-center md:grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 xs:grid-cols-1 xs:gap-4 md:gap-10 lg:gap-14 md:px-16 xs:p-3 '>
-        {!isLoading ? (
-          data.length > 0 ? (
-            data.map((element, index) => (
-              <EverythingCard
-                key={index}
-                title={element.title}
-                description={element.description}
-                imgUrl={element.urlToImage}
-                publishedAt={element.publishedAt}
-                url={element.url}
-                author={element.author}
-                source={element.source.name}
-              />
-            ))
-          ) : (
-            <p>No articles found for this category or criteria.</p>
-          )
-        ) : (
-          <Loader />
-        )}
-      </div>
-      {!isLoading && data.length > 0 && (
-        <div className="pagination flex justify-center gap-14 my-10 items-center">
-          <button disabled={page <= 1} className='pagination-btn' onClick={handlePrev}>Prev</button>
-          <p className='font-semibold opacity-80'>{page} of {Math.ceil(totalResults / pageSize)}</p>
-          <button className='pagination-btn' disabled={page >= Math.ceil(totalResults / pageSize)} onClick={handleNext}>Next</button>
+    useEffect(() => {
+        fetchHeadlines(1);
+    }, []);
+
+    const loadMore = () => {
+        const nextPage = page + 1;
+        setPage(nextPage);
+        fetchHeadlines(nextPage);
+    };
+
+    const handleArticleClick = (article) => {
+        navigate(`/article/${encodeURIComponent(article.url)}`, { state: { article } });
+    };
+
+    const formatDate = (dateString) => {
+        if (!dateString) return 'Unknown date';
+        
+        const options = { year: 'numeric', month: 'short', day: 'numeric' };
+        return new Date(dateString).toLocaleDateString(undefined, options);
+    };
+
+    if (error && !articles.length) {
+        return (
+            <div className="error-container text-center my-5">
+                <h3>Error</h3>
+                <p>{error}</p>
+                <button onClick={() => fetchHeadlines(1)} className="btn">Try Again</button>
+            </div>
+        );
+    }
+
+    return (
+        <div className="headlines-container container mx-auto px-4 py-8">
+            <h2 className="section-title text-2xl font-bold mb-6">Top Headlines</h2>
+            {articles.length > 0 ? (
+                <>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {articles.map((article, idx) => (
+                            <div 
+                                key={`${article.url}-${idx}`} 
+                                className="news-card bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300"
+                            >
+                                <div className="card-img-container">
+                                    {article.urlToImage ? (
+                                        <img 
+                                            className="w-full h-48 object-cover"
+                                            src={article.urlToImage} 
+                                            alt={article.title}
+                                            onError={(e) => {
+                                                e.target.src = 'https://via.placeholder.com/640x360?text=No+Image';
+                                            }}
+                                        />
+                                    ) : (
+                                        <img 
+                                            className="w-full h-48 object-cover" 
+                                            src="https://via.placeholder.com/640x360?text=No+Image" 
+                                            alt="Placeholder" 
+                                        />
+                                    )}
+                                </div>
+                                <div className="p-4 cursor-pointer" onClick={() => handleArticleClick(article)}>
+                                    <div className="article-meta flex justify-between text-sm text-gray-500 mb-2">
+                                        <span className="article-source">{article.source?.name || 'Unknown'}</span>
+                                        <span className="article-date">{formatDate(article.publishedAt)}</span>
+                                    </div>
+                                    <h3 className="text-lg font-semibold mb-2">{article.title}</h3>
+                                    <p className="text-gray-600 text-sm mb-4 line-clamp-3">{article.description}</p>
+                                    <div className="mt-2 text-right">
+                                        <button className="px-4 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors">
+                                            Read More
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                    {hasMore && (
+                        <div className="text-center mt-8">
+                            <button 
+                                onClick={loadMore} 
+                                className="px-6 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
+                                disabled={loading}
+                            >
+                                {loading ? 'Loading...' : 'Load More'}
+                            </button>
+                        </div>
+                    )}
+                </>
+            ) : loading ? (
+                <Loader />
+            ) : (
+                <div className="text-center py-10">
+                    <p className="text-xl text-gray-600">No headlines available at the moment.</p>
+                    <button 
+                        onClick={() => fetchHeadlines(1)} 
+                        className="mt-4 px-6 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
+                    >
+                        Try Again
+                    </button>
+                </div>
+            )}
         </div>
-      )}
-    </>
-  );
-}
+    );
+};
 
-export default TopHeadlines;
+export default Topheadlines;

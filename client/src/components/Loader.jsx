@@ -1,10 +1,11 @@
 import React from 'react'
+
 function Loader() {
   return (
-    <div className='loader-container w-full absolute flex justify-center top-0 left-0'>
-        {/* <img className='loader w-1/2' src={loader} alt="loader" /> */}
-        <span className="loader"></span>
+    <div className='loader-container w-full flex justify-center items-center py-10'>
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
     </div>
   )
 }
+
 export default Loader
