@@ -51,19 +51,23 @@ function AllNews() {
     <>
       {error && <div className="text-red-500 mb-4">{error}</div>}
 
-      <div className='my-10 cards grid lg:place-content-center md:grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 xs:grid-cols-1 xs:gap-4 md:gap-10 lg:gap-14 md:px-16 xs:p-3 '>
-        {!isLoading ? data.map((element, index) => (
-          <EverythingCard
-            title={element.title}
-            description={element.description}
-            imgUrl={element.urlToImage}
-            publishedAt={element.publishedAt}
-            url={element.url}
-            author={element.author}
-            source={element.source.name}
-            key={index}
-          />
-        )) : <Loader />}
+      <div className='my-10 cards grid lg:place-content-center md:grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 xs:grid-cols-1 xs:gap-4 md:gap-10 lg:gap-14 md:px-16 xs:p-3'>
+        {isLoading ? (
+          <Loader />
+        ) : (
+          data.map((element, index) => (
+            <EverythingCard
+              title={element.title}
+              description={element.description}
+              imgUrl={element.urlToImage}
+              publishedAt={element.publishedAt}
+              url={element.url}
+              author={element.author}
+              source={element.source.name}
+              key={index}
+            />
+          ))
+        )}
       </div>
       {!isLoading && data.length > 0 && (
         <div className="pagination flex justify-center gap-14 my-10 items-center">

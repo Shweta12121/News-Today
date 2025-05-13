@@ -8,17 +8,47 @@ function Header() {
   const [active, setActive] = useState(false);
   const [showCountryDropdown, setShowCountryDropdown] = useState(false);
   const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
-  const [theme, setTheme] = useState("light-theme");
+  const [theme, setTheme] = useState(() => {
+    // Get theme from localStorage or default to light-theme
+    return localStorage.getItem('theme') || "light-theme";
+  });
 
   const category = ["business", "entertainment", "general", "health", "science", "sports", "technology", "politics"];
 
+  // Close mobile menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (active && !e.target.closest('.nav-ul') && !e.target.closest('.ham-burger')) {
+        setActive(false);
+      }
+    };
+
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
+  }, [active]);
+
+  // Apply theme to body and save to localStorage
   useEffect(() => {
     document.body.className = theme;
+    localStorage.setItem('theme', theme);
   }, [theme]);
 
   const toggleTheme = () => {
     setTheme(prev => prev === "light-theme" ? "dark-theme" : "light-theme");
   };
+
+  // Close dropdowns when clicking elsewhere
+  useEffect(() => {
+    const closeDropdowns = (e) => {
+      if (!e.target.closest('.dropdown-li')) {
+        setShowCountryDropdown(false);
+        setShowCategoryDropdown(false);
+      }
+    };
+
+    document.addEventListener('click', closeDropdowns);
+    return () => document.removeEventListener('click', closeDropdowns);
+  }, []);
 
   return (
     <header className="">
@@ -26,16 +56,24 @@ function Header() {
         <h3 className="relative heading font-bold text-white md:basis-1/6 text-2xl xs:basis-4/12 z-50">News_Aggregator</h3>
 
         <ul className={active ? "nav-ul flex gap-11 md:gap-14 xs:gap-12 lg:basis-3/6 md:basis-4/6 md:justify-end active" : "nav-ul flex gap-14 lg:basis-3/6 md:basis-4/6 justify-end text-white"}>
-          <li><Link className="no-underline font-semibold" to="/" onClick={() => setActive(!active)}>All News</Link></li>
+          <li><Link className="no-underline font-semibold" to="/" onClick={() => setActive(false)}>All News</Link></li>
 
           <li className="dropdown-li">
-            <Link className="no-underline font-semibold flex items-center gap-2" onClick={() => { setShowCategoryDropdown(!showCategoryDropdown); setShowCountryDropdown(false); }}>
+            <Link className="no-underline font-semibold flex items-center gap-2" 
+              onClick={(e) => { 
+                e.preventDefault();
+                setShowCategoryDropdown(!showCategoryDropdown); 
+                setShowCountryDropdown(false); 
+              }}>
               Top-Headlines <FontAwesomeIcon className={showCategoryDropdown ? "down-arrow-icon down-arrow-icon-active" : "down-arrow-icon"} icon={faCircleArrowDown} />
             </Link>
             <ul className={showCategoryDropdown ? "dropdown p-2 show-dropdown" : "dropdown p-2"}>
               {category.map((element, index) => (
-                <li key={index} onClick={() => setShowCategoryDropdown(false)}>
-                  <Link to={`/top-headlines/${element}`} className="flex gap-3 capitalize" onClick={() => setActive(false)}>
+                <li key={index} onClick={() => {
+                  setShowCategoryDropdown(false);
+                  setActive(false);
+                }}>
+                  <Link to={`/top-headlines/${element}`} className="flex gap-3 capitalize">
                     {element}
                   </Link>
                 </li>
@@ -44,20 +82,28 @@ function Header() {
           </li>
 
           <li>
-            <Link to="/recommended" className="flex items-center gap-1 font-semibold no-underline text-white">
+            <Link to="/recommended" className="flex items-center gap-1 font-semibold no-underline text-white" onClick={() => setActive(false)}>
               <span>Recommended</span>
               <span className="ml-1 bg-red-500 text-white text-xs rounded-full px-1.5 py-0.5">New</span>
             </Link>
           </li>
 
           <li className="dropdown-li">
-            <Link className="no-underline font-semibold flex items-center gap-2" onClick={() => { setShowCountryDropdown(!showCountryDropdown); setShowCategoryDropdown(false); }}>
+            <Link className="no-underline font-semibold flex items-center gap-2" 
+              onClick={(e) => { 
+                e.preventDefault();
+                setShowCountryDropdown(!showCountryDropdown); 
+                setShowCategoryDropdown(false); 
+              }}>
               Country <FontAwesomeIcon className={showCountryDropdown ? "down-arrow-icon down-arrow-icon-active" : "down-arrow-icon"} icon={faCircleArrowDown} />
             </Link>
             <ul className={showCountryDropdown ? "dropdown p-2 show-dropdown" : "dropdown p-2"}>
               {countries.map((element, index) => (
-                <li key={index} onClick={() => setShowCountryDropdown(false)}>
-                  <Link to={`/country/${element?.iso_2_alpha}`} className="flex gap-3 items-center" onClick={() => setActive(false)}>
+                <li key={index} onClick={() => {
+                  setShowCountryDropdown(false);
+                  setActive(false);
+                }}>
+                  <Link to={`/country/${element?.iso_2_alpha}`} className="flex gap-3 items-center">
                     <img
                       src={element?.png}
                       srcSet={`https://flagcdn.com/32x24/${element?.iso_2_alpha}.png 2x`}

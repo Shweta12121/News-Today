@@ -5,7 +5,7 @@ import { trackArticleRead } from '../services/trackingService';
 // to track when users click on articles
 
 const ArticleTracker = ({ article, children, className }) => {
-  const handleClick = (e) => {
+  const handleClick = () => {
     // Track the article click
     trackArticleRead(article);
     

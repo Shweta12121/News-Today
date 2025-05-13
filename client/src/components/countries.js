@@ -1,12 +1,11 @@
-let twoLetterISO = [
+const twoLetterISO = [
     "ae","ar","at","au","be","bg","br","ca","ch","cn","co","cu","cz","de","eg",
     "fr","gb","gr","hk","hu","id","ie","il","in","it","jp","kr","lt","lv","ma",
     "mx","my","ng","nl","no","nz","ph","pl","pt","ro","rs",
     "ru","sa","se","sg","si","sk","th","tr","tw","ua","us","ve","za"
-]
+];
 
-
-var isoCountries = {
+const isoCountries = {
     'AF' : 'Afghanistan',
     'AX' : 'Aland Islands',
     'AL' : 'Albania',
@@ -254,24 +253,20 @@ var isoCountries = {
     'ZW' : 'Zimbabwe'
 };
 
-let countries = []; 
-twoLetterISO.forEach(element => {
-    let obj = {
-        iso_2_alpha : element,
-        // 
-        png : `https://flagcdn.com/24x18/${element}.png`,
-        countryName : getCountryName(element.toUpperCase()),
-    }
-    countries.push(obj); 
-})
-
-function getCountryName (countryCode) {
+function getCountryName(countryCode) {
     if (isoCountries.hasOwnProperty(countryCode)) {
         return isoCountries[countryCode];
     } else {
         return countryCode;
     }
 }
-console.log(countries)
+
+const countries = twoLetterISO.map(element => {
+    return {
+        iso_2_alpha: element,
+        png: `https://flagcdn.com/24x18/${element}.png`,
+        countryName: getCountryName(element.toUpperCase()),
+    };
+});
 
 export default countries;

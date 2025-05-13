@@ -1,41 +1,65 @@
 import React, { useEffect } from "react";
 import { trackArticleRead } from "../services/recommendationService";
 
-function Card(props) {
+function EverythingCard(props) {
+  // Track article impression when component mounts
   useEffect(() => {
-    if (props) {
-      trackArticleRead("anonymous", {
+    if (props && props.title) {
+      const articleData = {
         title: props.title,
         url: props.url,
         source: props.source,
         author: props.author,
         publishedAt: props.publishedAt,
-      });
+      };
+      
+      // Track as impression
+      trackArticleRead("anonymous", articleData, "impression");
     }
   }, [props]);
 
+  // Handle article click
   const handleArticleClick = () => {
-    if (props) {
-      trackArticleRead("anonymous", {
+    if (props && props.title) {
+      const articleData = {
         title: props.title,
         url: props.url,
         source: props.source,
         author: props.author,
         publishedAt: props.publishedAt,
-      });
+      };
+      
+      // Track as click
+      trackArticleRead("anonymous", articleData, "click");
     }
   };
+
+  // Early return if no props
+  if (!props || !props.title) {
+    return null;
+  }
 
   return (
     <div className="everything-card mt-10" onClick={handleArticleClick}>
       <div className="everything-card flex flex-wrap p-5 gap-1 mb-1">
         <b className="title">{props.title}</b>
-        <div className="everything-card-img mx-auto">
-          <img className="everything-card-img" src={props.imgUrl} alt="img" />
-        </div>
+        {props.imgUrl && (
+          <div className="everything-card-img mx-auto">
+            <img 
+              className="everything-card-img" 
+              src={props.imgUrl} 
+              alt={props.title} 
+              onError={(e) => {
+                e.target.onerror = null;
+                e.target.src = "https://via.placeholder.com/300x200?text=No+Image";
+              }}
+            />
+          </div>
+        )}
         <div className="description">
           <p className="description-text leading-7">
-            {props.description?.substring(0, 200)}
+            {props.description ? props.description.substring(0, 200) : 'No description available'}
+            {props.description && props.description.length > 200 ? '...' : ''}
           </p>
         </div>
         <div className="info">
@@ -47,58 +71,17 @@ function Card(props) {
               rel="noopener noreferrer"
               className="link underline break-words"
             >
-              {props.source?.substring(0, 70)}
+              {props.source ? props.source.substring(0, 70) : 'Unknown source'}
+              {props.source && props.source.length > 70 ? '...' : ''}
             </a>
           </div>
           <div className="origin flex flex-col">
             <p className="origin-item">
-              <span className="font-semibold">Author:</span> {props.author}
+              <span className="font-semibold">Author:</span> {props.author || 'Unknown'}
             </p>
             <p className="origin-item">
-              <span className="font-semibold">Published At:</span> {props.publishedAt}
+              <span className="font-semibold">Published At:</span> {props.publishedAt || 'Unknown date'}
             </p>
-          </div>
-        </div>
-      </div>
-
-      {/* Additional card section with styles */}
-      <div className="flex lg:flex-row">
-        <div
-          className="h-48 lg:h-auto lg:w-48 flex-none bg-cover rounded-t lg:rounded-t-none lg:rounded-l text-center overflow-hidden"
-          style={{ backgroundImage: `url(${props.imageUrlLeft})` }}
-          title={props.imageLeftTitle}
-        ></div>
-        <div className="border rounded-b lg:rounded-b-none lg:rounded-r p-4 flex flex-col justify-between leading-normal">
-          <div className="mb-8">
-            <p className="text-sm text-gray-600 flex items-center">
-              {props.memberIcon && (
-                <svg
-                  className="fill-current text-gray-500 w-3 h-3 mr-2"
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 20 20"
-                >
-                  {props.memberIcon}
-                </svg>
-              )}
-              {props.memberText}
-            </p>
-            <div className="text-gray-900 font-bold text-xl mb-2">
-              {props.cardTitle}
-            </div>
-            <p className="text-gray-700 text-base">{props.cardDescription}</p>
-          </div>
-          <div className="flex items-center">
-            {props.authorImage && (
-              <img
-                className="w-10 h-10 rounded-full mr-4"
-                src={props.authorImage}
-                alt="Avatar"
-              />
-            )}
-            <div className="text-sm">
-              <p className="text-gray-900 leading-none">{props.authorName}</p>
-              <p className="text-gray-600">{props.publishedDate}</p>
-            </div>
           </div>
         </div>
       </div>
@@ -106,4 +89,4 @@ function Card(props) {
   );
 }
 
-export default Card;
+export default EverythingCard;
