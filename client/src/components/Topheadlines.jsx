@@ -4,8 +4,8 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from 'react-router-dom';
 import Loader from "./Loader";
 
-// Define the API base URL
-const API_BASE_URL = 'http://localhost:3000';
+// Define the API base URL - fixed to use production URL
+const API_BASE_URL = 'https://news-aggregator-dusky.vercel.app';
 
 const Topheadlines = () => {
     const [articles, setArticles] = useState([]);
@@ -72,8 +72,9 @@ const Topheadlines = () => {
         fetchHeadlines(nextPage);
     };
 
+    // Fixed to use direct URL instead of navigating to a separate route
     const handleArticleClick = (article) => {
-        navigate(`/article/${encodeURIComponent(article.url)}`, { state: { article } });
+        window.open(article.url, "_blank", "noopener,noreferrer");
     };
 
     const formatDate = (dateString) => {
@@ -122,15 +123,20 @@ const Topheadlines = () => {
                                         />
                                     )}
                                 </div>
-                                <div className="p-4 cursor-pointer" onClick={() => handleArticleClick(article)}>
+                                <div className="p-4">
                                     <div className="article-meta flex justify-between text-sm text-gray-500 mb-2">
                                         <span className="article-source">{article.source?.name || 'Unknown'}</span>
                                         <span className="article-date">{formatDate(article.publishedAt)}</span>
                                     </div>
-                                    <h3 className="text-lg font-semibold mb-2">{article.title}</h3>
+                                    <h3 className="text-lg font-semibold mb-2 cursor-pointer hover:text-blue-600" onClick={() => handleArticleClick(article)}>
+                                        {article.title}
+                                    </h3>
                                     <p className="text-gray-600 text-sm mb-4 line-clamp-3">{article.description}</p>
                                     <div className="mt-2 text-right">
-                                        <button className="px-4 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors">
+                                        <button 
+                                            className="px-4 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
+                                            onClick={() => handleArticleClick(article)}
+                                        >
                                             Read More
                                         </button>
                                     </div>

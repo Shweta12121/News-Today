@@ -11,6 +11,8 @@ function EverythingCard(props) {
         source: props.source,
         author: props.author,
         publishedAt: props.publishedAt,
+        urlToImage: props.imgUrl,
+        description: props.description
       };
       
       // Track as impression
@@ -27,6 +29,8 @@ function EverythingCard(props) {
         source: props.source,
         author: props.author,
         publishedAt: props.publishedAt,
+        urlToImage: props.imgUrl,
+        description: props.description
       };
       
       // Track as click
@@ -40,7 +44,7 @@ function EverythingCard(props) {
   }
 
   return (
-    <div className="everything-card mt-10" onClick={handleArticleClick}>
+    <div className="everything-card mt-10">
       <div className="everything-card flex flex-wrap p-5 gap-1 mb-1">
         <b className="title">{props.title}</b>
         {props.imgUrl && (
@@ -65,15 +69,10 @@ function EverythingCard(props) {
         <div className="info">
           <div className="source-info flex items-center gap-2">
             <span className="font-semibold">Source:</span>
-            <a
-              href={props.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="link underline break-words"
-            >
+            <span className="break-words">
               {props.source ? props.source.substring(0, 70) : 'Unknown source'}
               {props.source && props.source.length > 70 ? '...' : ''}
-            </a>
+            </span>
           </div>
           <div className="origin flex flex-col">
             <p className="origin-item">
@@ -83,6 +82,17 @@ function EverythingCard(props) {
               <span className="font-semibold">Published At:</span> {props.publishedAt || 'Unknown date'}
             </p>
           </div>
+        </div>
+        <div className="w-full text-right mt-4">
+          <a
+            href={props.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="read-more-btn px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
+            onClick={handleArticleClick}
+          >
+            Read More
+          </a>
         </div>
       </div>
     </div>

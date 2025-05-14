@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { getRecommendations, clearTrackingData } from '../services/trackingService';
+import { getRecommendations, clearTrackingData } from '../services/recommendationService';
 
 const RecommendedNews = () => {
   const [recommendations, setRecommendations] = useState([]);
@@ -10,7 +10,7 @@ const RecommendedNews = () => {
     const fetchRecommendations = () => {
       setLoading(true);
       try {
-        // Get recommendations from tracking service
+        // Get recommendations from recommendation service (not trackingService)
         const recommendedArticles = getRecommendations(10);
         setRecommendations(recommendedArticles);
         
@@ -92,9 +92,9 @@ const RecommendedNews = () => {
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {recommendations.map((article) => (
+              {recommendations.map((article, index) => (
                 <div 
-                  key={article.id} 
+                  key={`${article.url}-${index}`} 
                   className="bg-white rounded-lg overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300"
                 >
                   {article.urlToImage && (

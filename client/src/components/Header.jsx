@@ -53,7 +53,7 @@ function Header() {
   return (
     <header className="">
       <nav className="fixed top-0 left-0 w-full h-auto bg-gray-800 z-10 flex items-center justify-around py-3 px-4 shadow-md">
-        <h3 className="relative heading font-bold text-white md:basis-1/6 text-2xl xs:basis-4/12 z-50">News_Aggregator</h3>
+        <h3 className="relative heading font-bold text-white md:basis-1/6 text-2xl xs:basis-4/12 z-50">News Today</h3>
 
         <ul className={active ? "nav-ul flex gap-11 md:gap-14 xs:gap-12 lg:basis-3/6 md:basis-4/6 md:justify-end active" : "nav-ul flex gap-14 lg:basis-3/6 md:basis-4/6 justify-end text-white"}>
           <li><Link className="no-underline font-semibold" to="/" onClick={() => setActive(false)}>All News</Link></li>
@@ -84,7 +84,6 @@ function Header() {
           <li>
             <Link to="/recommended" className="flex items-center gap-1 font-semibold no-underline text-white" onClick={() => setActive(false)}>
               <span>Recommended</span>
-              <span className="ml-1 bg-red-500 text-white text-xs rounded-full px-1.5 py-0.5">New</span>
             </Link>
           </li>
 
