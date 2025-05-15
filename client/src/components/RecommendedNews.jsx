@@ -1,31 +1,36 @@
-import { useState, useEffect } from 'react';
-import { getRecommendations, clearTrackingData } from '../services/recommendationService';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { getRecommendations, clearTrackingData, trackArticleRead } from '../services/recommendationService';
+import Loader from './Loader';
+import CategoryPreferences from './CategoryPreferences';
 
 const RecommendedNews = () => {
   const [recommendations, setRecommendations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [hasReadHistory, setHasReadHistory] = useState(false);
+  const [showPreferences, setShowPreferences] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
-    const fetchRecommendations = () => {
-      setLoading(true);
-      try {
-        // Get recommendations from recommendation service (not trackingService)
-        const recommendedArticles = getRecommendations(10);
-        setRecommendations(recommendedArticles);
-        
-        // Check if user has any reading history
-        const readHistory = JSON.parse(localStorage.getItem('readArticles')) || [];
-        setHasReadHistory(readHistory.length > 0);
-      } catch (error) {
-        console.error("Error getting recommendations:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    
     fetchRecommendations();
   }, []);
+
+  const fetchRecommendations = () => {
+    setLoading(true);
+    try {
+      // Get recommendations from recommendation service
+      const recommendedArticles = getRecommendations(10);
+      setRecommendations(recommendedArticles);
+      
+      // Check if user has any reading history
+      const readHistory = JSON.parse(localStorage.getItem('readArticles')) || [];
+      setHasReadHistory(readHistory.length > 0);
+    } catch (error) {
+      console.error("Error getting recommendations:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
   
   // Format the date for display
   const formatDate = (dateString) => {
@@ -54,22 +59,43 @@ const RecommendedNews = () => {
       setHasReadHistory(false);
     }
   };
+
+  // Handle article clicks
+  const handleArticleClick = (article) => {
+    // Track the click
+    trackArticleRead("anonymous", article, "click");
+    
+    // Navigate to article detail
+    navigate(`/article/${encodeURIComponent(article.url)}`, { 
+      state: { article } 
+    });
+  };
   
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">Recommended For You</h1>
-        <button 
-          onClick={handleResetTracking}
-          className="px-3 py-1 bg-red-500 text-white rounded text-sm hover:bg-red-600"
-        >
-          Reset History
-        </button>
+        <div className="flex space-x-2">
+          <button 
+            onClick={() => setShowPreferences(!showPreferences)}
+            className="px-3 py-1 bg-blue-500 text-white rounded text-sm hover:bg-blue-600"
+          >
+            {showPreferences ? 'Hide Preferences' : 'Customize'}
+          </button>
+          <button 
+            onClick={handleResetTracking}
+            className="px-3 py-1 bg-red-500 text-white rounded text-sm hover:bg-red-600"
+          >
+            Reset History
+          </button>
+        </div>
       </div>
+      
+      {showPreferences && <CategoryPreferences refreshRecommendations={fetchRecommendations} />}
       
       {loading ? (
         <div className="flex justify-center items-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+          <Loader />
         </div>
       ) : (
         <>
@@ -101,7 +127,8 @@ const RecommendedNews = () => {
                     <img 
                       src={article.urlToImage} 
                       alt={article.title} 
-                      className="w-full h-48 object-cover"
+                      className="w-full h-48 object-cover cursor-pointer"
+                      onClick={() => handleArticleClick(article)}
                       onError={(e) => {
                         e.target.src = 'https://via.placeholder.com/640x360?text=No+Image';
                       }}
@@ -109,20 +136,20 @@ const RecommendedNews = () => {
                   )}
                   
                   <div className="p-4">
-                    <h2 className="text-xl font-semibold mb-2">
-                      <a 
-                        href={article.url} 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className="hover:text-blue-600"
-                      >
-                        {article.title}
-                      </a>
+                    <h2 className="text-xl font-semibold mb-2 cursor-pointer hover:text-blue-600"
+                        onClick={() => handleArticleClick(article)}>
+                      {article.title}
                     </h2>
                     
                     {article.description && (
                       <p className="text-gray-600 mb-4 line-clamp-3">
                         {article.description}
+                      </p>
+                    )}
+                    
+                    {article.recommendationReason && (
+                      <p className="text-sm text-blue-500 italic mb-3">
+                        {article.recommendationReason}
                       </p>
                     )}
                     
@@ -145,14 +172,12 @@ const RecommendedNews = () => {
                     )}
                     
                     <div className="mt-4 text-right">
-                      <a 
-                        href={article.url} 
-                        target="_blank" 
-                        rel="noopener noreferrer"
+                      <button 
+                        onClick={() => handleArticleClick(article)}
                         className="inline-block px-4 py-1 rounded bg-blue-500 text-white hover:bg-blue-600 transition-colors duration-300"
                       >
                         Read More
-                      </a>
+                      </button>
                     </div>
                   </div>
                 </div>

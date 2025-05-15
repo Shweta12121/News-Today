@@ -1,5 +1,7 @@
 // src/services/trackingService.js
 
+
+
 // Initialize the tracking system
 export const initializeTracking = () => {
   // Ensure localStorage is available

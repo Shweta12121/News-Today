@@ -1,6 +1,7 @@
 import React from 'react';
 import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import { trackArticleRead } from "../services/recommendationService";
+import Loader from './Loader';
 
 const ArticleDetail = () => {
   const { url } = useParams();
@@ -46,10 +47,8 @@ const ArticleDetail = () => {
   if (!article) {
     return (
       <div className="flex justify-center items-center h-screen">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500 mx-auto mb-4"></div>
-          <p>Opening article...</p>
-        </div>
+        <Loader />
+        <p className="mt-4">Opening article...</p>
       </div>
     );
   }

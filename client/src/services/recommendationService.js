@@ -1,178 +1,212 @@
+// src/services/recommendationService.js
+
 /**
- * Recommendation Service
- * 
- * This service handles tracking user article interactions and generating recommendations
- * based on reading history. It stores data in localStorage for persistence across sessions.
+ * This service handles article tracking and generates recommendations based on user reading history
  */
 
-// Local storage keys
-const READ_ARTICLES_KEY = 'readArticles';
-const ARTICLE_IMPRESSIONS_KEY = 'articleImpressions';
-const USER_PREFERENCES_KEY = 'userPreferences';
+// Constants
+const LOCAL_STORAGE_KEY = 'readArticles';
+const PREFERRED_CATEGORIES_KEY = 'preferredCategories';
+const MAX_HISTORY_SIZE = 50;
 
 /**
- * Track when a user reads/clicks/views an article
- * 
- * @param {string} userId - User identifier (or "anonymous" for non-logged in users)
- * @param {Object} article - Article data object
- * @param {string} interactionType - Type of interaction ("impression", "click", "detail_view")
+ * Track when a user reads or interacts with an article
+ * @param {string} userId - User identifier (can be anonymous)
+ * @param {Object} article - Article data
+ * @param {string} interactionType - Type of interaction (impression, click, detail_view, external_click)
  */
 export const trackArticleRead = (userId, article, interactionType = 'click') => {
-  if (!article || !article.title) return;
-  
   try {
+    if (!article || !article.title) return false;
+    
     // Get existing read history
-    const readArticles = JSON.parse(localStorage.getItem(READ_ARTICLES_KEY)) || [];
-    const articleImpressions = JSON.parse(localStorage.getItem(ARTICLE_IMPRESSIONS_KEY)) || [];
+    const storedData = localStorage.getItem(LOCAL_STORAGE_KEY);
+    let readArticles = storedData ? JSON.parse(storedData) : [];
     
-    // Current timestamp
-    const timestamp = new Date().toISOString();
-    
-    // Different handling based on interaction type
-    if (interactionType === 'impression') {
-      // For impressions, just add to impressions list if not already there
-      const existingImpression = articleImpressions.find(item => item.url === article.url);
-      if (!existingImpression) {
-        articleImpressions.push({
-          ...article,
-          timestamp,
-          userId
-        });
-        localStorage.setItem(ARTICLE_IMPRESSIONS_KEY, JSON.stringify(articleImpressions));
+    // Add category if not present
+    if (article.source && article.source.name) {
+      const sourceLower = article.source.name.toLowerCase();
+      // Try to extract category from source name
+      if (sourceLower.includes('tech') || sourceLower.includes('digital')) {
+        article.category = 'technology';
+      } else if (sourceLower.includes('sport')) {
+        article.category = 'sports';
+      } else if (sourceLower.includes('business') || sourceLower.includes('finance') || sourceLower.includes('economic')) {
+        article.category = 'business';
+      } else if (sourceLower.includes('health') || sourceLower.includes('medical')) {
+        article.category = 'health';
+      } else if (sourceLower.includes('entertain') || sourceLower.includes('hollywood')) {
+        article.category = 'entertainment';
+      } else if (sourceLower.includes('science')) {
+        article.category = 'science';
+      } else if (sourceLower.includes('politic')) {
+        article.category = 'politics';
       }
-    } else {
-      // For clicks and detailed views, add to read history
-      const existingArticle = readArticles.find(item => item.url === article.url);
-      
-      if (existingArticle) {
-        // Update existing entry with new timestamp and increment view count
-        existingArticle.lastRead = timestamp;
-        existingArticle.viewCount = (existingArticle.viewCount || 1) + 1;
-      } else {
-        // Add new entry
-        readArticles.push({
-          ...article, 
-          firstRead: timestamp,
-          lastRead: timestamp,
-          viewCount: 1,
-          userId
-        });
-      }
-      
-      // Store updated read history
-      localStorage.setItem(READ_ARTICLES_KEY, JSON.stringify(readArticles));
-      
-      // Update user preferences based on this article
-      updateUserPreferences(article);
     }
-  } catch (error) {
-    console.error('Error tracking article read:', error);
-  }
-};
-
-/**
- * Update user preferences based on articles they read
- * 
- * @param {Object} article - Article data
- */
-const updateUserPreferences = (article) => {
-  try {
-    const userPrefs = JSON.parse(localStorage.getItem(USER_PREFERENCES_KEY)) || {
-      sources: {},
-      categories: {},
-      authors: {}
+    
+    // Add timestamp to track when the article was read
+    const trackingData = {
+      ...article,
+      userId,
+      interactionType,
+      timestamp: new Date().toISOString(),
     };
     
-    // Update source preference
-    if (article.source && article.source.name) {
-      const sourceName = article.source.name;
-      userPrefs.sources[sourceName] = (userPrefs.sources[sourceName] || 0) + 1;
+    // Check if article already exists in history
+    const existingIndex = readArticles.findIndex(item => item.url === article.url);
+    
+    if (existingIndex !== -1) {
+      // Update existing entry with new interaction type
+      readArticles[existingIndex] = {
+        ...readArticles[existingIndex],
+        interactionType, // Update to latest interaction
+        timestamp: trackingData.timestamp, // Update timestamp
+      };
+    } else {
+      // Add new article to history
+      readArticles.unshift(trackingData);
     }
     
-    // Update author preference
-    if (article.author) {
-      userPrefs.authors[article.author] = (userPrefs.authors[article.author] || 0) + 1;
+    // Limit the size of the history
+    if (readArticles.length > MAX_HISTORY_SIZE) {
+      readArticles = readArticles.slice(0, MAX_HISTORY_SIZE);
     }
     
-    // Update category preference if available
-    if (article.category) {
-      userPrefs.categories[article.category] = (userPrefs.categories[article.category] || 0) + 1;
-    }
+    // Save back to localStorage
+    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(readArticles));
     
-    localStorage.setItem(USER_PREFERENCES_KEY, JSON.stringify(userPrefs));
+    return true;
   } catch (error) {
-    console.error('Error updating user preferences:', error);
+    console.error('Error tracking article:', error);
+    return false;
   }
 };
 
 /**
- * Get recommendations based on user reading history
- * 
+ * Get recommended articles based on user's reading history
  * @param {number} limit - Maximum number of recommendations to return
- * @returns {Array} - Array of recommended articles
+ * @returns {Array} - List of recommended articles
  */
 export const getRecommendations = (limit = 10) => {
   try {
-    const readArticles = JSON.parse(localStorage.getItem(READ_ARTICLES_KEY)) || [];
-    const articleImpressions = JSON.parse(localStorage.getItem(ARTICLE_IMPRESSIONS_KEY)) || [];
-    const userPrefs = JSON.parse(localStorage.getItem(USER_PREFERENCES_KEY)) || { sources: {}, categories: {}, authors: {} };
+    // Get read history
+    const storedData = localStorage.getItem(LOCAL_STORAGE_KEY);
+    if (!storedData) return [];
     
-    // If no read history, return empty recommendations
-    if (readArticles.length === 0) {
-      return [];
-    }
+    const readArticles = JSON.parse(storedData);
+    if (!readArticles || readArticles.length === 0) return [];
     
-    // Combine impressions and remove articles already read
-    const readUrls = new Set(readArticles.map(a => a.url));
-    const candidateArticles = articleImpressions.filter(article => !readUrls.has(article.url));
+    // Count category frequencies
+    const categoryStats = {};
+    const sourceStats = {};
     
-    // Score each candidate article
-    const scoredArticles = candidateArticles.map(article => {
-      let score = 0;
-      
-      // Score based on source preference
-      if (article.source && article.source.name && userPrefs.sources[article.source.name]) {
-        score += userPrefs.sources[article.source.name] * 2;
+    readArticles.forEach(article => {
+      // Track categories
+      if (article.category) {
+        categoryStats[article.category] = (categoryStats[article.category] || 0) + 1;
       }
       
-      // Score based on author preference
-      if (article.author && userPrefs.authors[article.author]) {
-        score += userPrefs.authors[article.author] * 1.5;
+      // Track sources
+      if (article.source && article.source.name) {
+        sourceStats[article.source.name] = (sourceStats[article.source.name] || 0) + 1;
       }
-      
-      // Score based on category preference
-      if (article.category && userPrefs.categories[article.category]) {
-        score += userPrefs.categories[article.category] * 3;
-      }
-      
-      return { ...article, score };
     });
     
-    // Sort by score and take the top results
-    const recommendations = scoredArticles
-      .sort((a, b) => b.score - a.score)
-      .slice(0, limit)
-      .map((article, index) => ({
-        ...article,
-        id: `rec-${index}`
-      }));
+    // Get user's preferred categories (if set)
+    const preferredCategories = getPreferredCategories();
     
-    return recommendations;
+    // Find most read categories
+    const sortedCategories = Object.entries(categoryStats)
+      .sort((a, b) => b[1] - a[1])
+      .map(entry => entry[0]);
+    
+    // Find most read sources
+    const sortedSources = Object.entries(sourceStats)
+      .sort((a, b) => b[1] - a[1])
+      .map(entry => entry[0]);
+    
+    // Create simulated recommendations based on user's history
+    // This could be replaced with actual API calls in production
+    const recommendations = [];
+    
+    // Use a combination of already read articles and modify them to simulate recommendations
+    for (let i = 0; i < readArticles.length && recommendations.length < limit; i++) {
+      const baseArticle = readArticles[i];
+      
+      // Skip articles already in recommendations
+      if (recommendations.some(rec => rec.url === baseArticle.url)) continue;
+      
+      // Create a modified version to simulate a recommendation
+      const similarArticle = {
+        ...baseArticle,
+        title: `Similar: ${baseArticle.title.split(' ').slice(0, 5).join(' ')}...`,
+        description: baseArticle.description || 'Related to your interests',
+        recommended: true,
+        recommendationReason: getRecommendationReason(baseArticle, sortedCategories, sortedSources, preferredCategories)
+      };
+      
+      recommendations.push(similarArticle);
+    }
+    
+    return recommendations.slice(0, limit);
   } catch (error) {
-    console.error('Error getting recommendations:', error);
+    console.error('Error generating recommendations:', error);
     return [];
   }
 };
 
 /**
- * Clear all tracking data from localStorage
+ * Get the reason for recommending an article
+ */
+function getRecommendationReason(article, topCategories, topSources, preferredCategories) {
+  if (preferredCategories && preferredCategories.includes(article.category)) {
+    return `Based on your category preference: ${article.category}`;
+  }
+  
+  if (article.category && topCategories.includes(article.category)) {
+    return `Based on your interest in ${article.category}`;
+  }
+  
+  if (article.source && article.source.name && topSources.includes(article.source.name)) {
+    return `From your trusted source: ${article.source.name}`;
+  }
+  
+  return 'Similar to articles you have read';
+}
+
+/**
+ * Save user's preferred news categories
+ * @param {Array} categories - List of category names
+ * @returns {boolean} - Success status
+ */
+export const savePreferredCategories = (categories) => {
+  try {
+    localStorage.setItem(PREFERRED_CATEGORIES_KEY, JSON.stringify(categories));
+    return true;
+  } catch (error) {
+    console.error('Error saving preferred categories:', error);
+    return false;
+  }
+};
+
+/**
+ * Get user's preferred news categories
+ * @returns {Array} - List of category names
+ */
+export const getPreferredCategories = () => {
+  try {
+    const stored = localStorage.getItem(PREFERRED_CATEGORIES_KEY);
+    return stored ? JSON.parse(stored) : [];
+  } catch (error) {
+    console.error('Error retrieving preferred categories:', error);
+    return [];
+  }
+};
+
+/**
+ * Clear all tracking data (for testing)
  */
 export const clearTrackingData = () => {
-  try {
-    localStorage.removeItem(READ_ARTICLES_KEY);
-    localStorage.removeItem(ARTICLE_IMPRESSIONS_KEY);
-    localStorage.removeItem(USER_PREFERENCES_KEY);
-  } catch (error) {
-    console.error('Error clearing tracking data:', error);
-  }
+  localStorage.removeItem(LOCAL_STORAGE_KEY);
+  localStorage.removeItem(PREFERRED_CATEGORIES_KEY);
 };
